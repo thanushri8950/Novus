@@ -37,3 +37,23 @@ def fetch_price():
 
 if __name__ == "__main__":
     fetch_price()
+
+
+import time
+
+if __name__ == "__main__":
+    while True:
+        print("🔄 Updating live data...")
+        fetch_price()
+
+        # run shift detection automatically
+        import subprocess
+        subprocess.run(["python3", "ml/shift_detector.py"])
+
+        # convert to JSON
+        import pandas as pd
+        df = pd.read_csv("data/shifts_live.csv")
+        df.to_json("frontend/public/shifts_live.json", orient="records", indent=2)
+
+        print("✅ Updated UI data")
+        time.sleep(10)  # update every 10 seconds
