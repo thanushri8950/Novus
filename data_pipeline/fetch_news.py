@@ -84,8 +84,8 @@ def run_pipeline():
     while True:
         print("\n🔄 Updating data...")
         fetch_news()
-        print("⏳ Sleeping for 30 minutes...\n")
-        time.sleep(1800)  # 30 min
+        print("⏳ Sleeping for 1 second...\n")
+        time.sleep(1)  # 1 min
 
 
 if __name__ == "__main__":
