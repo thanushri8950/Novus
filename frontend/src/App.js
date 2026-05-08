@@ -11,9 +11,10 @@ import {
 
 function App() {
   const [data, setData] = useState([]);
+  const [history, setHistory] = useState([]);
   const [selectedStock, setSelectedStock] = useState(null);
 
-  // 🔄 LIVE DATA
+  // 🔄 FETCH LIVE DATA
   useEffect(() => {
     const fetchData = () => {
       fetch("/shifts_live.json")
@@ -25,6 +26,13 @@ function App() {
     const interval = setInterval(fetchData, 3000);
     return () => clearInterval(interval);
   }, []);
+
+  // 📈 BUILD HISTORY (for real-time graph)
+  useEffect(() => {
+    if (data.length > 0) {
+      setHistory((prev) => [...prev.slice(-20), ...data]);
+    }
+  }, [data]);
 
   const getColor = (shift) => {
     if (shift.includes("Positive")) return "#00c896";
@@ -65,10 +73,20 @@ function App() {
         </p>
       </div>
 
-      {/* 📊 MAIN GRAPH */}
+      {/* ❓ WHY PANEL */}
+      <div className="why">
+        <h3>Why this signal?</h3>
+        <p>
+          {top?.change > 0
+            ? "Price increased → positive sentiment detected."
+            : "Price decreased → negative sentiment detected."}
+        </p>
+      </div>
+
+      {/* 📊 MAIN GRAPH (REAL-TIME) */}
       <div className="graph">
         <ResponsiveContainer width="100%" height={300}>
-          <LineChart data={sorted}>
+          <LineChart data={history}>
             <XAxis dataKey="company" stroke="#888" />
             <YAxis stroke="#888" />
             <Tooltip />
@@ -80,6 +98,23 @@ function App() {
             />
           </LineChart>
         </ResponsiveContainer>
+      </div>
+
+      {/* 🔥 HEATMAP */}
+      <div className="heatmap">
+        {sorted.map((item, i) => (
+          <div
+            key={i}
+            className="heatbox"
+            style={{
+              background: item.change > 0 ? "#1f8f5f" : "#8f2f2f",
+            }}
+          >
+            {item.company}
+            <br />
+            {(item.change * 100).toFixed(2)}%
+          </div>
+        ))}
       </div>
 
       {/* 🚨 ALERT */}
@@ -113,7 +148,7 @@ function App() {
               {item.shift}
             </p>
 
-            {/* 🔥 BULLISH / BEARISH TAG */}
+            {/* 📊 BULLISH / BEARISH */}
             <p className="tag">
               {item.change > 0
                 ? "Bullish 📈"
@@ -125,7 +160,7 @@ function App() {
         ))}
       </div>
 
-      {/* 🔍 INDIVIDUAL GRAPH (UNCHANGED BUT BETTER) */}
+      {/* 🔍 INDIVIDUAL STOCK GRAPH */}
       {selectedStock && (
         <div className="detail">
           <h2>{selectedStock.company} Analysis</h2>
@@ -154,11 +189,11 @@ function App() {
         </div>
       )}
 
-      {/* 📘 EXPLANATION PANEL */}
+      {/* 📘 EXPLANATION */}
       <div className="explain">
         <h3>Market Terms</h3>
-        <p><b>Bullish:</b> Expect price to increase 📈</p>
-        <p><b>Bearish:</b> Expect price to decrease 📉</p>
+        <p><b>Bullish:</b> Expect price increase</p>
+        <p><b>Bearish:</b> Expect price decrease</p>
         <p><b>Neutral:</b> No strong movement</p>
       </div>
     </div>

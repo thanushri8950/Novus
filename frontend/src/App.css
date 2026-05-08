@@ -91,3 +91,18 @@ body {
   border-radius: 8px;
   margin-top: 15px;
 }
+
+
+.heatmap {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 5px;
+  margin-top: 15px;
+}
+
+.heatbox {
+  padding: 10px;
+  text-align: center;
+  font-size: 12px;
+}
+
