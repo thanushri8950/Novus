@@ -195,3 +195,19 @@ def run_detection_cycle(ticker: str, get_latest_sentiment, fetch_live_price, fet
 
     event = ingest_sentiment(ticker, avg_score, price)
     return event
+
+
+df = pd.read_csv("data/price_live.csv")
+
+def detect_shift(row):
+    if row["change"] > 0.001:
+        return "🚀 Positive Shift"
+    elif row["change"] < -0.001:
+        return "⚠️ Negative Shift"
+    else:
+        return "➖ Stable"
+
+df["shift"] = df.apply(detect_shift, axis=1)
+
+df.to_csv("data/shifts_live.csv", index=False)
+print("✅ shifts_live.csv updated")

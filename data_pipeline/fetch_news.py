@@ -1,15 +1,7 @@
-import requests
+import yfinance as yf
 import pandas as pd
-import time
-import os
-from datetime import datetime, timezone
-from dotenv import load_dotenv
+from datetime import datetime
 
-# Load API key
-load_dotenv()
-API_KEY = os.getenv("NEWS_API_KEY")
-
-# Companies
 COMPANIES = {
     "Tesla": "TSLA",
     "Apple": "AAPL",
@@ -18,75 +10,30 @@ COMPANIES = {
     "Microsoft": "MSFT"
 }
 
-def fetch_news():
-    all_articles = []
-    seen_headlines = set()
+def fetch_price():
+    all_data = []
 
     for company, ticker in COMPANIES.items():
-        print(f"📡 Fetching news for {company}...")
+        data = yf.download(ticker, period="1d", interval="1m")
 
-        url = f"https://newsapi.org/v2/everything?q={company}&apiKey={API_KEY}&pageSize=10"
+        latest_price = data["Close"].iloc[-1].item()
+        prev_price = data["Close"].iloc[-2].item()
 
-        data = None
+        change = (latest_price - prev_price) / prev_price
 
-        # Retry logic
-        for attempt in range(3):
-            try:
-                response = requests.get(url, timeout=10)
-                response.raise_for_status()
-                data = response.json()
-                break
-            except Exception:
-                print(f"⚠️ Retry {attempt+1} for {company}")
-                time.sleep(2)
+        all_data.append({
+            "time": datetime.now().strftime("%H:%M:%S"),
+            "company": company,
+            "price": latest_price,
+            "change": change
+        })
 
-        # Skip if API failed
-        if data is None:
-            print(f"❌ Skipping {company} (API failed)")
-            continue
+    df = pd.DataFrame(all_data)
 
-        articles = data.get("articles", [])
+    # ✅ FIXED PATH
+    df.to_csv("data/price_live.csv", index=False)
 
-        for article in articles[:10]:
-            title = article.get("title")   # ✅ FIXED
-
-            if not title:
-                continue
-
-            title = title.strip()
-
-            # Remove duplicates
-            if title in seen_headlines:
-                continue
-
-            seen_headlines.add(title)
-
-            all_articles.append({
-                "date": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),
-                "company": company,
-                "ticker": ticker,
-                "headline": title,
-                "url": article.get("url"),
-                "source": article.get("source", {}).get("name")
-            })
-
-    # Ensure output folder exists
-    os.makedirs("output", exist_ok=True)
-
-    # Save CSV
-    df = pd.DataFrame(all_articles)
-    df.to_csv("output/news.csv", index=False)
-
-    print(f"✅ news.csv saved ({len(df)} rows)")
-
-
-def run_pipeline():
-    while True:
-        print("\n🔄 Updating data...")
-        fetch_news()
-        print("⏳ Sleeping for 30 minutes...\n")
-        time.sleep(1800)  # 30 min
-
+    print("✅ price_live.csv updated")
 
 if __name__ == "__main__":
-    run_pipeline()
+    fetch_price()
