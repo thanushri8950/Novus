@@ -1,37 +1,37 @@
 [
   {
-    "time":"21:22:38",
+    "time":"23:26:43",
     "company":"Tesla",
-    "price":427.950012207,
-    "change":0.0198026815,
+    "price":427.4400024414,
+    "change":0.0185873309,
     "shift":"\ud83d\ude80 Positive Shift"
   },
   {
-    "time":"21:22:39",
+    "time":"23:26:43",
     "company":"Apple",
-    "price":292.4800109863,
-    "change":0.0053968832,
+    "price":292.3299865723,
+    "change":0.0048811759,
     "shift":"\ud83d\ude80 Positive Shift"
   },
   {
-    "time":"21:22:40",
+    "time":"23:26:44",
     "company":"Google",
-    "price":398.9200134277,
-    "change":0.003471361,
+    "price":398.8099975586,
+    "change":0.0031946194,
     "shift":"\ud83d\ude80 Positive Shift"
   },
   {
-    "time":"21:22:40",
+    "time":"23:26:44",
     "company":"Amazon",
-    "price":273.1950073242,
-    "change":0.0085094159,
+    "price":272.7399902344,
+    "change":0.0068297035,
     "shift":"\ud83d\ude80 Positive Shift"
   },
   {
-    "time":"21:22:41",
+    "time":"23:26:45",
     "company":"Microsoft",
-    "price":415.9100036621,
-    "change":0.000430826,
+    "price":415.75,
+    "change":0.0000459528,
     "shift":"\u2796 Stable"
   }
 ]

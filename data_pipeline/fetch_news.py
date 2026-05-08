@@ -3,6 +3,7 @@ import pandas as pd
 import time
 import subprocess
 from datetime import datetime
+import random
 
 # 🔥 STOCK LIST
 COMPANIES = {
@@ -44,10 +45,14 @@ def fetch_price():
 
         try:
             latest_price = float(data["Close"].iloc[-1])
-            first_price = float(data["Close"].iloc[0])
+            recent = data["Close"].tail(5)
 
-            change = (latest_price - first_price) / first_price
+           
 
+            change = (recent.iloc[-1] - recent.iloc[0]) / recent.iloc[0]
+
+# 🔥 amplify + tiny variation
+            change = change * 5 + random.uniform(-0.002, 0.002)
             rows.append({
                 "time": datetime.now().strftime("%H:%M:%S"),
                 "company": name,
