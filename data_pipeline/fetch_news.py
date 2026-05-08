@@ -1,7 +1,10 @@
 import yfinance as yf
 import pandas as pd
+import time
+import subprocess
 from datetime import datetime
 
+# 🔥 STOCK LIST
 COMPANIES = {
     "Tesla": "TSLA",
     "Apple": "AAPL",
@@ -10,50 +13,89 @@ COMPANIES = {
     "Microsoft": "MSFT"
 }
 
+
 def fetch_price():
-    all_data = []
+    rows = []
 
-    for company, ticker in COMPANIES.items():
-        data = yf.download(ticker, period="1d", interval="1m")
+    for name, symbol in COMPANIES.items():
+        print(f"📡 Fetching {name}...")
 
-        latest_price = data["Close"].iloc[-1].item()
-        prev_price = data["Close"].iloc[-2].item()
+        data = None
 
-        change = (latest_price - prev_price) / prev_price
+        # 🔁 Retry logic (important)
+        for _ in range(3):
+            try:
+                data = yf.download(
+                    symbol,
+                    period="1d",
+                    interval="1m",
+                    progress=False
+                )
+                if not data.empty:
+                    break
+            except:
+                pass
+            time.sleep(1)
 
-        all_data.append({
-            "time": datetime.now().strftime("%H:%M:%S"),
-            "company": company,
-            "price": latest_price,
-            "change": change
-        })
+        # ❌ If still no data → skip
+        if data is None or data.empty:
+            print(f"❌ Failed to fetch {symbol}, skipping...")
+            continue
 
-    df = pd.DataFrame(all_data)
+        try:
+            latest_price = float(data["Close"].iloc[-1])
+            first_price = float(data["Close"].iloc[0])
 
-    # ✅ FIXED PATH
+            change = (latest_price - first_price) / first_price
+
+            rows.append({
+                "time": datetime.now().strftime("%H:%M:%S"),
+                "company": name,
+                "price": latest_price,
+                "change": change
+            })
+
+        except Exception as e:
+            print(f"⚠️ Error processing {symbol}: {e}")
+            continue
+
+    # ❗ If nothing fetched
+    if len(rows) == 0:
+        print("❌ No data fetched at all")
+        return
+
+    df = pd.DataFrame(rows)
+
+    # ✅ Save CSV
     df.to_csv("data/price_live.csv", index=False)
-
     print("✅ price_live.csv updated")
 
-if __name__ == "__main__":
-    fetch_price()
 
-
-import time
-
-if __name__ == "__main__":
+def run_pipeline():
     while True:
-        print("🔄 Updating live data...")
+        print("\n🔄 Updating live market data...\n")
+
         fetch_price()
 
-        # run shift detection automatically
-        import subprocess
+        # 🔁 Run shift detection
         subprocess.run(["python3", "ml/shift_detector.py"])
 
-        # convert to JSON
-        import pandas as pd
-        df = pd.read_csv("data/shifts_live.csv")
-        df.to_json("frontend/public/shifts_live.json", orient="records", indent=2)
+        # 🔄 Convert to JSON for frontend
+        try:
+            df = pd.read_csv("data/shifts_live.csv")
+            df.to_json(
+                "frontend/public/shifts_live.json",
+                orient="records",
+                indent=2
+            )
+            print("✅ UI JSON updated")
+        except Exception as e:
+            print("⚠️ JSON update failed:", e)
 
-        print("✅ Updated UI data")
-        time.sleep(10)  # update every 10 seconds
+        # ⏱️ Wait before next update
+        time.sleep(10)
+
+
+# 🚀 ENTRY POINT
+if __name__ == "__main__":
+    run_pipeline()
