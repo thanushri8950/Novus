@@ -12,7 +12,9 @@ import {
 function App() {
   const [data, setData] = useState([]);
   const [selectedStock, setSelectedStock] = useState(null);
+  const [time, setTime] = useState(new Date());
 
+  // 🔄 LIVE DATA FETCH
   useEffect(() => {
     const fetchData = () => {
       fetch("/shifts_live.json")
@@ -21,8 +23,14 @@ function App() {
     };
 
     fetchData();
-    const interval = setInterval(fetchData, 5000);
+    const interval = setInterval(fetchData, 3000);
     return () => clearInterval(interval);
+  }, []);
+
+  // ⏰ CLOCK
+  useEffect(() => {
+    const t = setInterval(() => setTime(new Date()), 1000);
+    return () => clearInterval(t);
   }, []);
 
   const getColor = (shift) => {
@@ -31,7 +39,6 @@ function App() {
     return "#999";
   };
 
-  // sort by strongest movement
   const sorted = [...data].sort(
     (a, b) => Math.abs(b.change) - Math.abs(a.change)
   );
@@ -40,24 +47,19 @@ function App() {
   return (
     <div className="app">
       <h1 className="title">NOVUS TERMINAL</h1>
+      <p className="clock">{time.toLocaleTimeString()}</p>
 
-      {/* 🔥 TOP SIGNAL */}
+      {/* 🔥 HERO */}
       {top && (
         <div className="hero">
           <div>
             <h2>TOP SIGNAL</h2>
             <h1>{top.company}</h1>
           </div>
-
           <div>
             <p className="price">${top.price.toFixed(2)}</p>
-            <p className="change">
-              {(top.change * 100).toFixed(2)}%
-            </p>
-            <p
-              className="shift"
-              style={{ color: getColor(top.shift) }}
-            >
+            <p>{(top.change * 100).toFixed(2)}%</p>
+            <p style={{ color: getColor(top.shift) }}>
               {top.shift}
             </p>
           </div>
@@ -67,7 +69,7 @@ function App() {
       {/* 📊 TICKER */}
       <div className="ticker">
         {sorted.map((item, i) => (
-          <div key={i} className="ticker-item">
+          <div key={i}>
             {item.company}{" "}
             <span style={{ color: getColor(item.shift) }}>
               {(item.change * 100).toFixed(2)}%
@@ -100,12 +102,28 @@ function App() {
         </div>
       )}
 
+      {/* 🧭 TOP MOVERS */}
+      <div className="top-movers">
+        <h3>Top Movers</h3>
+        {sorted.slice(0, 3).map((item, i) => (
+          <p key={i}>
+            {item.company} — {(item.change * 100).toFixed(2)}%
+          </p>
+        ))}
+      </div>
+
       {/* 📦 CARDS */}
       <div className="grid">
         {sorted.map((item, index) => (
           <div
             key={index}
-            className="card"
+            className={`card ${
+              item.shift.includes("Positive")
+                ? "positive"
+                : item.shift.includes("Negative")
+                ? "negative"
+                : ""
+            }`}
             onClick={() => setSelectedStock(item)}
           >
             <h3>{item.company}</h3>
@@ -115,11 +133,24 @@ function App() {
               {item.shift}
             </p>
 
-            <p className="insight">
-              {item.change > 0.001
-                ? "Momentum Building"
-                : "Stable Market"}
+            <p className="tag">
+              {item.change > 0.002
+                ? "🚀 Strong Bullish"
+                : item.change < -0.002
+                ? "🔻 Strong Bearish"
+                : "➖ Neutral"}
             </p>
+
+            {/* mini graph */}
+            <ResponsiveContainer width="100%" height={60}>
+              <LineChart data={[item]}>
+                <Line
+                  type="monotone"
+                  dataKey="change"
+                  stroke="#00c896"
+                />
+              </LineChart>
+            </ResponsiveContainer>
           </div>
         ))}
       </div>
@@ -128,14 +159,11 @@ function App() {
       {selectedStock && (
         <div className="detail">
           <h2>{selectedStock.company} Analysis</h2>
-
           <p>Price: ${selectedStock.price.toFixed(2)}</p>
           <p>
             Change: {(selectedStock.change * 100).toFixed(2)}%
           </p>
-          <p
-            style={{ color: getColor(selectedStock.shift) }}
-          >
+          <p style={{ color: getColor(selectedStock.shift) }}>
             {selectedStock.shift}
           </p>
 
