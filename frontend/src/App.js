@@ -14,7 +14,7 @@ function App() {
   const [selectedStock, setSelectedStock] = useState(null);
   const [time, setTime] = useState(new Date());
 
-  // 🔄 LIVE DATA FETCH
+  // 🔄 LIVE DATA
   useEffect(() => {
     const fetchData = () => {
       fetch("/shifts_live.json")
@@ -39,15 +39,22 @@ function App() {
     return "#999";
   };
 
+  const cleanShift = (shift) =>
+    shift.replace("🚀", "").replace("⚠️", "").trim();
+
   const sorted = [...data].sort(
     (a, b) => Math.abs(b.change) - Math.abs(a.change)
   );
+
   const top = sorted[0];
 
   return (
     <div className="app">
       <h1 className="title">NOVUS TERMINAL</h1>
-      <p className="clock">{time.toLocaleTimeString()}</p>
+
+      <p className="meta">
+        LIVE • Market Signal Engine • {time.toLocaleTimeString()}
+      </p>
 
       {/* 🔥 HERO */}
       {top && (
@@ -60,7 +67,7 @@ function App() {
             <p className="price">${top.price.toFixed(2)}</p>
             <p>{(top.change * 100).toFixed(2)}%</p>
             <p style={{ color: getColor(top.shift) }}>
-              {top.shift}
+              {cleanShift(top.shift)}
             </p>
           </div>
         </div>
@@ -80,16 +87,16 @@ function App() {
 
       {/* 📈 GRAPH */}
       <div className="graph">
-        <ResponsiveContainer width="100%" height={300}>
+        <ResponsiveContainer width="100%" height={280}>
           <LineChart data={sorted}>
-            <XAxis dataKey="company" stroke="#888" />
-            <YAxis stroke="#888" />
+            <XAxis dataKey="company" stroke="#777" />
+            <YAxis stroke="#777" />
             <Tooltip />
             <Line
               type="monotone"
               dataKey="change"
               stroke={top && top.change > 0 ? "#00c896" : "#ff3b3b"}
-              strokeWidth={3}
+              strokeWidth={2}
             />
           </LineChart>
         </ResponsiveContainer>
@@ -97,9 +104,7 @@ function App() {
 
       {/* 🚨 ALERT */}
       {sorted.some((d) => !d.shift.includes("Stable")) && (
-        <div className="alert">
-          ⚠️ LIVE MARKET SHIFT DETECTED
-        </div>
+        <div className="alert">MARKET SHIFT DETECTED</div>
       )}
 
       {/* 🧭 TOP MOVERS */}
@@ -130,27 +135,16 @@ function App() {
             <p>${item.price.toFixed(2)}</p>
             <p>{(item.change * 100).toFixed(2)}%</p>
             <p style={{ color: getColor(item.shift) }}>
-              {item.shift}
+              {cleanShift(item.shift)}
             </p>
 
             <p className="tag">
               {item.change > 0.002
-                ? "🚀 Strong Bullish"
+                ? "Strong Bullish"
                 : item.change < -0.002
-                ? "🔻 Strong Bearish"
-                : "➖ Neutral"}
+                ? "Strong Bearish"
+                : "Neutral"}
             </p>
-
-            {/* mini graph */}
-            <ResponsiveContainer width="100%" height={60}>
-              <LineChart data={[item]}>
-                <Line
-                  type="monotone"
-                  dataKey="change"
-                  stroke="#00c896"
-                />
-              </LineChart>
-            </ResponsiveContainer>
           </div>
         ))}
       </div>
@@ -158,16 +152,17 @@ function App() {
       {/* 🔍 DETAIL PANEL */}
       {selectedStock && (
         <div className="detail">
-          <h2>{selectedStock.company} Analysis</h2>
+          <h2>{selectedStock.company}</h2>
+
           <p>Price: ${selectedStock.price.toFixed(2)}</p>
           <p>
             Change: {(selectedStock.change * 100).toFixed(2)}%
           </p>
           <p style={{ color: getColor(selectedStock.shift) }}>
-            {selectedStock.shift}
+            {cleanShift(selectedStock.shift)}
           </p>
 
-          <ResponsiveContainer width="100%" height={250}>
+          <ResponsiveContainer width="100%" height={220}>
             <LineChart data={sorted}>
               <XAxis dataKey="company" />
               <YAxis />
@@ -180,7 +175,10 @@ function App() {
             </LineChart>
           </ResponsiveContainer>
 
-          <button onClick={() => setSelectedStock(null)}>
+          <button
+            className="close-btn"
+            onClick={() => setSelectedStock(null)}
+          >
             Close
           </button>
         </div>
