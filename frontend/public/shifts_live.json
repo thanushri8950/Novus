@@ -1,0 +1,23 @@
+[
+  {
+    "time":"17:19:04",
+    "company":"Tesla",
+    "price":411.799987793,
+    "change":0.0013129845,
+    "shift":"\ud83d\ude80 Positive Shift"
+  },
+  {
+    "time":"17:19:05",
+    "company":"Apple",
+    "price":287.4700012207,
+    "change":0.000173919,
+    "shift":"\u2796 Stable"
+  },
+  {
+    "time":"17:19:05",
+    "company":"Google",
+    "price":398.0299987793,
+    "change":0.0002513158,
+    "shift":"\u2796 Stable"
+  }
+]
