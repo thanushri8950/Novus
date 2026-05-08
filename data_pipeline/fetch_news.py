@@ -1,20 +1,16 @@
 import requests
 import pandas as pd
+import time
+import os
 from datetime import datetime
 from dotenv import load_dotenv
-import os
-import time
 
 # Load API key
 load_dotenv()
 API_KEY = os.getenv("NEWS_API_KEY")
 
-if not API_KEY:
-    print("❌ API key missing. Check .env file")
-    exit()
-
 # Companies
-companies = {
+COMPANIES = {
     "Tesla": "TSLA",
     "Apple": "AAPL",
     "Google": "GOOGL",
@@ -22,57 +18,75 @@ companies = {
     "Microsoft": "MSFT"
 }
 
+# Fetch news function
 def fetch_news():
     all_articles = []
+    seen_headlines = set()
 
-    for company, ticker in companies.items():
+    for company, ticker in COMPANIES.items():
         print(f"📡 Fetching news for {company}...")
 
-        url = f"https://newsapi.org/v2/everything?q={company}&apiKey={API_KEY}"
+        url = f"https://newsapi.org/v2/everything?q={company}&apiKey={API_KEY}&pageSize=10"
 
-        try:
-            response = requests.get(url, timeout=10)
-            data = response.json()
+        data = None  # ✅ FIX: initialize
 
-            # Check API error
-            if data.get("status") != "ok":
-                print(f"⚠ API error for {company}: {data}")
+        # Retry logic
+        for attempt in range(3):
+            try:
+                response = requests.get(url, timeout=10)
+                response.raise_for_status()  # ✅ catches API errors
+                data = response.json()
+                break
+            except Exception as e:
+                print(f"⚠️ Retry {attempt+1} for {company}")
+                time.sleep(2)
+
+        # ✅ FIX: skip if API failed
+        if data is None:
+            print(f"❌ Skipping {company} (API failed)")
+            continue
+
+        articles = data.get("articles", [])
+
+        for article in articles:
+            title = article.get("title")
+
+            # Skip invalid
+            if not title:
                 continue
 
-            articles = data.get("articles", [])
+            title = title.strip()
 
-            for article in articles[:10]:
-                all_articles.append({
-                    "date": datetime.now().strftime("%Y-%m-%d"),
-                    "company": company,
-                    "ticker": ticker,
-                    "headline": article.get("title"),
-                    "url": article.get("url")
-                })
+            # Remove duplicates
+            if title in seen_headlines:
+                continue
 
-            time.sleep(1)  # avoid rate limit
+            seen_headlines.add(title)
 
-        except Exception as e:
-            print(f"❌ Error fetching {company}: {e}")
+            all_articles.append({
+                "date": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
+                "company": company,
+                "ticker": ticker,
+                "headline": title,
+                "url": article.get("url"),
+                "source": article.get("source", {}).get("name")
+            })
 
-    return all_articles
-
-
-def save_to_csv(data):
-    df = pd.DataFrame(data)
+    # Save CSV
+    df = pd.DataFrame(all_articles)
     df.to_csv("news.csv", index=False)
+
     print(f"✅ news.csv saved ({len(df)} rows)")
 
 
-if __name__ == "__main__":
-    articles = fetch_news()
-    save_to_csv(articles)
-
-
-if __name__ == "__main__":
+# Auto-update loop
+def run_pipeline():
     while True:
         print("\n🔄 Updating data...")
-        articles = fetch_news()
-        save_to_csv(articles)
-        print("⏳ Sleeping for 30 minutes...\n")
-        time.sleep(10)
+        fetch_news()
+        print("⏳ Sleeping for 1 second...\n")
+        time.sleep(1)  # 30 minutes
+
+
+if __name__ == "__main__":
+    run_pipeline()
