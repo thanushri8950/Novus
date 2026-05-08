@@ -2,7 +2,7 @@ import requests
 import pandas as pd
 import time
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from dotenv import load_dotenv
 
 # Load API key
@@ -18,7 +18,6 @@ COMPANIES = {
     "Microsoft": "MSFT"
 }
 
-# Fetch news function
 def fetch_news():
     all_articles = []
     seen_headlines = set()
@@ -28,30 +27,29 @@ def fetch_news():
 
         url = f"https://newsapi.org/v2/everything?q={company}&apiKey={API_KEY}&pageSize=10"
 
-        data = None  # ✅ FIX: initialize
+        data = None
 
         # Retry logic
         for attempt in range(3):
             try:
                 response = requests.get(url, timeout=10)
-                response.raise_for_status()  # ✅ catches API errors
+                response.raise_for_status()
                 data = response.json()
                 break
-            except Exception as e:
+            except Exception:
                 print(f"⚠️ Retry {attempt+1} for {company}")
                 time.sleep(2)
 
-        # ✅ FIX: skip if API failed
+        # Skip if API failed
         if data is None:
             print(f"❌ Skipping {company} (API failed)")
             continue
 
         articles = data.get("articles", [])
 
-        for article in articles:
-            title = article.get("title")
+        for article in articles[:10]:
+            title = article.get("title")   # ✅ FIXED
 
-            # Skip invalid
             if not title:
                 continue
 
@@ -64,7 +62,7 @@ def fetch_news():
             seen_headlines.add(title)
 
             all_articles.append({
-                "date": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
+                "date": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),
                 "company": company,
                 "ticker": ticker,
                 "headline": title,
@@ -72,20 +70,22 @@ def fetch_news():
                 "source": article.get("source", {}).get("name")
             })
 
+    # Ensure output folder exists
+    os.makedirs("output", exist_ok=True)
+
     # Save CSV
     df = pd.DataFrame(all_articles)
-    df.to_csv("news.csv", index=False)
+    df.to_csv("output/news.csv", index=False)
 
     print(f"✅ news.csv saved ({len(df)} rows)")
 
 
-# Auto-update loop
 def run_pipeline():
     while True:
         print("\n🔄 Updating data...")
         fetch_news()
-        print("⏳ Sleeping for 1 second...\n")
-        time.sleep(1)  # 30 minutes
+        print("⏳ Sleeping for 30 minutes...\n")
+        time.sleep(1800)  # 30 min
 
 
 if __name__ == "__main__":
