@@ -1,7 +1,7 @@
 body {
   margin: 0;
   font-family: 'Segoe UI', sans-serif;
-  background-color: #0e1117;
+  background: #0a0f14;
   color: white;
 }
 
@@ -11,39 +11,77 @@ body {
 
 .title {
   text-align: center;
-  margin-bottom: 30px;
-  font-size: 32px;
+  font-size: 28px;
+  margin-bottom: 20px;
+  letter-spacing: 2px;
 }
 
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 20px;
-}
-
-.card {
-  background: #1c1f26;
+/* 🔥 HERO */
+.hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #111827;
   padding: 20px;
   border-radius: 12px;
-  box-shadow: 0 0 10px rgba(0,0,0,0.5);
-  transition: transform 0.2s;
-}
-
-.card:hover {
-  transform: scale(1.03);
+  margin-bottom: 20px;
+  border: 1px solid #222;
 }
 
 .price {
-  font-size: 24px;
-  margin: 10px 0;
+  font-size: 26px;
 }
 
 .change {
   font-size: 18px;
-  margin-bottom: 10px;
 }
 
 .shift {
   font-size: 20px;
   font-weight: bold;
+}
+
+/* 📊 TICKER */
+.ticker {
+  display: flex;
+  overflow-x: auto;
+  gap: 20px;
+  background: #111;
+  padding: 10px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.ticker-item {
+  font-size: 14px;
+}
+
+/* 🚨 ALERT */
+.alert {
+  background: #ff4d4d;
+  text-align: center;
+  padding: 10px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-weight: bold;
+}
+
+/* 📦 GRID */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 15px;
+}
+
+.card {
+  background: #1c1f26;
+  padding: 15px;
+  border-radius: 10px;
+  text-align: center;
+  border: 1px solid #222;
+  transition: 0.2s;
+}
+
+.card:hover {
+  transform: scale(1.05);
 }

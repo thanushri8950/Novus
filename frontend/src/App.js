@@ -6,80 +6,106 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "rec
 function App() {
   const [data, setData] = useState([]);
 
+  useEffect(() => {
+    const fetchData = () => {
+      fetch("/shifts_live.json")
+        .then(res => res.json())
+        .then(data => setData(data));
+    };
 
-useEffect(() => {
-  const fetchData = () => {
-    fetch("/shifts_live.json")
-      .then(res => res.json())
-      .then(data => setData(data));
+    fetchData();
+    const interval = setInterval(fetchData, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const getColor = (shift) => {
+    if (shift.includes("Positive")) return "#00ff9c";
+    if (shift.includes("Negative")) return "#ff4d4d";
+    return "#999";
   };
 
-  fetchData();
-
-  const interval = setInterval(fetchData, 5000);
-
-  return () => clearInterval(interval);
-}, []);
-
-
-
-const getColor = (shift) => {
-  if (shift.includes("Positive")) return "#00ff9c";
-  if (shift.includes("Negative")) return "#ff4d4d";
-  return "#999";
-};
-
+  const sorted = [...data].sort((a, b) => Math.abs(b.change) - Math.abs(a.change));
+  const top = sorted[0];
 
   return (
     <div className="app">
-      <h1 className="title">📊 Market Shift Intelligence</h1>
 
-      {/* 🚨 ALERT */}
-{data.some(item => item.shift.includes("Positive") || item.shift.includes("Negative")) && (
-  <div style={{
-    background: "#ff4d4d",
-    padding: "10px",
-    borderRadius: "8px",
-    marginBottom: "20px",
-    textAlign: "center",
-    fontWeight: "bold"
-  }}>
-    ⚠️ Market Shift Detected!
-  </div>
-)}
+      <h1 className="title">NOVUS TERMINAL</h1>
 
-{/* 📊 GRAPH */}
-<div style={{ height: "300px", marginBottom: "30px" }}>
+      {/* 🔥 TOP SIGNAL */}
+      {top && (
+        <div className="hero">
+          <div>
+            <h2>TOP SIGNAL</h2>
+            <h1>{top.company}</h1>
+          </div>
+
+          <div>
+            <p className="price">${top.price.toFixed(2)}</p>
+            <p className="change">{(top.change * 100).toFixed(2)}%</p>
+            <p className="shift" style={{ color: getColor(top.shift) }}>
+              {top.shift}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* 📊 MARKET STRIP */}
+      <div className="ticker">
+        {data.map((item, i) => (
+          <div key={i} className="ticker-item">
+            {item.company}{" "}
+            <span style={{ color: getColor(item.shift) }}>
+              {(item.change * 100).toFixed(2)}%
+            </span>
+          </div>
+        ))}
+      </div>
+
+
+
+      {/* 📈 GRAPH */}
+<div style={{ height: "300px", marginBottom: "20px" }}>
   <ResponsiveContainer width="100%" height="100%">
     <LineChart data={data}>
-      <XAxis dataKey="company" stroke="#ccc" />
-      <YAxis stroke="#ccc" />
+      <XAxis dataKey="company" stroke="#888" />
+      <YAxis stroke="#888" />
       <Tooltip />
-      <Line type="monotone" dataKey="change" stroke="#00ff9c" strokeWidth={2} />
+      <Line
+        type="monotone"
+        dataKey="change"
+        stroke="#00ff9c"
+        strokeWidth={2}
+      />
     </LineChart>
   </ResponsiveContainer>
 </div>
 
+
+
+
+
+      {/* 🚨 ALERT */}
+      {data.some(d => !d.shift.includes("Stable")) && (
+        <div className="alert">
+          ⚠️ LIVE MARKET SHIFT DETECTED
+        </div>
+      )}
+
+      {/* 📦 GRID */}
       <div className="grid">
         {data.map((item, index) => (
           <div key={index} className="card">
-            <h2>{item.company}</h2>
-
-            <p className="price">${item.price.toFixed(2)}</p>
-
-            <p className="change">
-              {(item.change * 100).toFixed(2)}%
-            </p>
-
-            <p
-              className="shift"
-              style={{ color: getColor(item.shift) }}
-            >
+            <h3>{item.company}</h3>
+            <p>${item.price.toFixed(2)}</p>
+            <p>{(item.change * 100).toFixed(2)}%</p>
+            <p style={{ color: getColor(item.shift) }}>
               {item.shift}
             </p>
           </div>
         ))}
       </div>
+
     </div>
   );
 }
