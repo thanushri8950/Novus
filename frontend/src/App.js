@@ -1,16 +1,23 @@
 import React, { useEffect, useState } from "react";
 import "./App.css";
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
-
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 
 function App() {
   const [data, setData] = useState([]);
+  const [selectedStock, setSelectedStock] = useState(null);
 
   useEffect(() => {
     const fetchData = () => {
       fetch("/shifts_live.json")
-        .then(res => res.json())
-        .then(data => setData(data));
+        .then((res) => res.json())
+        .then((data) => setData(data));
     };
 
     fetchData();
@@ -19,17 +26,19 @@ function App() {
   }, []);
 
   const getColor = (shift) => {
-    if (shift.includes("Positive")) return "#00ff9c";
-    if (shift.includes("Negative")) return "#ff4d4d";
+    if (shift.includes("Positive")) return "#00c896";
+    if (shift.includes("Negative")) return "#ff3b3b";
     return "#999";
   };
 
-  const sorted = [...data].sort((a, b) => Math.abs(b.change) - Math.abs(a.change));
+  // sort by strongest movement
+  const sorted = [...data].sort(
+    (a, b) => Math.abs(b.change) - Math.abs(a.change)
+  );
   const top = sorted[0];
 
   return (
     <div className="app">
-
       <h1 className="title">NOVUS TERMINAL</h1>
 
       {/* 🔥 TOP SIGNAL */}
@@ -42,17 +51,22 @@ function App() {
 
           <div>
             <p className="price">${top.price.toFixed(2)}</p>
-            <p className="change">{(top.change * 100).toFixed(2)}%</p>
-            <p className="shift" style={{ color: getColor(top.shift) }}>
+            <p className="change">
+              {(top.change * 100).toFixed(2)}%
+            </p>
+            <p
+              className="shift"
+              style={{ color: getColor(top.shift) }}
+            >
               {top.shift}
             </p>
           </div>
         </div>
       )}
 
-      {/* 📊 MARKET STRIP */}
+      {/* 📊 TICKER */}
       <div className="ticker">
-        {data.map((item, i) => (
+        {sorted.map((item, i) => (
           <div key={i} className="ticker-item">
             {item.company}{" "}
             <span style={{ color: getColor(item.shift) }}>
@@ -62,50 +76,87 @@ function App() {
         ))}
       </div>
 
-
-
       {/* 📈 GRAPH */}
-<div style={{ height: "300px", marginBottom: "20px" }}>
-  <ResponsiveContainer width="100%" height="100%">
-    <LineChart data={data}>
-      <XAxis dataKey="company" stroke="#888" />
-      <YAxis stroke="#888" />
-      <Tooltip />
-      <Line
-        type="monotone"
-        dataKey="change"
-        stroke="#00ff9c"
-        strokeWidth={2}
-      />
-    </LineChart>
-  </ResponsiveContainer>
-</div>
-
-
-
-
+      <div className="graph">
+        <ResponsiveContainer width="100%" height={300}>
+          <LineChart data={sorted}>
+            <XAxis dataKey="company" stroke="#888" />
+            <YAxis stroke="#888" />
+            <Tooltip />
+            <Line
+              type="monotone"
+              dataKey="change"
+              stroke={top && top.change > 0 ? "#00c896" : "#ff3b3b"}
+              strokeWidth={3}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
 
       {/* 🚨 ALERT */}
-      {data.some(d => !d.shift.includes("Stable")) && (
+      {sorted.some((d) => !d.shift.includes("Stable")) && (
         <div className="alert">
           ⚠️ LIVE MARKET SHIFT DETECTED
         </div>
       )}
 
-      {/* 📦 GRID */}
+      {/* 📦 CARDS */}
       <div className="grid">
-        {data.map((item, index) => (
-          <div key={index} className="card">
+        {sorted.map((item, index) => (
+          <div
+            key={index}
+            className="card"
+            onClick={() => setSelectedStock(item)}
+          >
             <h3>{item.company}</h3>
             <p>${item.price.toFixed(2)}</p>
             <p>{(item.change * 100).toFixed(2)}%</p>
             <p style={{ color: getColor(item.shift) }}>
               {item.shift}
             </p>
+
+            <p className="insight">
+              {item.change > 0.001
+                ? "Momentum Building"
+                : "Stable Market"}
+            </p>
           </div>
         ))}
       </div>
 
+      {/* 🔍 DETAIL PANEL */}
+      {selectedStock && (
+        <div className="detail">
+          <h2>{selectedStock.company} Analysis</h2>
+
+          <p>Price: ${selectedStock.price.toFixed(2)}</p>
+          <p>
+            Change: {(selectedStock.change * 100).toFixed(2)}%
+          </p>
+          <p
+            style={{ color: getColor(selectedStock.shift) }}
+          >
+            {selectedStock.shift}
+          </p>
+
+          <ResponsiveContainer width="100%" height={250}>
+            <LineChart data={sorted}>
+              <XAxis dataKey="company" />
+              <YAxis />
+              <Tooltip />
+              <Line
+                type="monotone"
+                dataKey="change"
+                stroke="#00c896"
+              />
+            </LineChart>
+          </ResponsiveContainer>
+
+          <button onClick={() => setSelectedStock(null)}>
+            Close
+          </button>
+        </div>
+      )}
     </div>
   );
 }
