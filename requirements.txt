@@ -1,3 +1,7 @@
-requests>=2.31.0
+# Sentiment Shift Detection - Sentiment Scoring Module
+# Install with: pip install -r requirements.txt
+
+torch>=2.0.0
+transformers>=4.36.0
+sentencepiece>=0.1.99
 pandas>=2.0.0
-python-dotenv>=1.0.0
