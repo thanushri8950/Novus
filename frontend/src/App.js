@@ -14,33 +14,30 @@ function App() {
   const [history, setHistory] = useState([]);
   const [selectedStock, setSelectedStock] = useState(null);
   const [open, setOpen] = useState(false);
+  const [chat, setChat] = useState([]);
+  const [input, setInput] = useState("");
 
   // 🔄 FETCH LIVE DATA
   useEffect(() => {
     const fetchData = () => {
       fetch(`/shifts_live.json?${Date.now()}`)
         .then((res) => res.json())
-        .then((data) => {
-  const updated = data.map(d => ({
-    ...d,
-    change: d.change + (Math.random() * 0.01 - 0.005) // 🔥 small variation
-  }));
-  setData(updated);
-});
+        .then((data) => setData(data))
+        .catch((err) => console.log("FETCH ERROR:", err));
     };
 
     fetchData();
-    const interval = setInterval(fetchData, 3000);
+    const interval = setInterval(fetchData, 5000); // slower = smoother
     return () => clearInterval(interval);
   }, []);
 
-  // 📈 BUILD HISTORY (for real-time graph)
+  // 📈 BUILD HISTORY
   useEffect(() => {
     if (data.length > 0) {
       setHistory((prev) => [
-  ...prev.slice(-20),
-  ...data.map(d => ({ ...d }))
-]);
+        ...prev.slice(-20),
+        ...data.map((d) => ({ ...d })),
+      ]);
     }
   }, [data]);
 
@@ -51,39 +48,64 @@ function App() {
   };
 
   const sorted = [...data].sort(
-  (a, b) => Math.abs(b.change) - Math.abs(a.change)
-);
+    (a, b) => Math.abs(b.change) - Math.abs(a.change)
+  );
 
-const top = sorted.length > 0 ? sorted[0] : null;
+  const top = sorted.length > 0 ? sorted[0] : null;
+
+  // 🤖 SIMPLE CHATBOT
+  const handleSend = () => {
+    if (!input) return;
+
+    const userMsg = { sender: "user", text: input };
+    let reply = "Ask about TSLA, AAPL or 'top stock'";
+
+    const query = input.toLowerCase();
+
+    for (let stock of sorted) {
+      if (query.includes(stock.company.toLowerCase())) {
+        reply = `${stock.company} is ${
+          stock.change > 0 ? "Bullish 📈" : "Bearish 📉"
+        } with ${(stock.change * 100).toFixed(2)}% change.`;
+      }
+    }
+
+    if (query.includes("top")) {
+      reply = `${top.company} is the top mover right now 🚀`;
+    }
+
+    setChat([...chat, userMsg, { sender: "bot", text: reply }]);
+    setInput("");
+  };
 
   return (
-    
     <div className="app">
+
+      {/* 🔝 NAVBAR */}
       <div className="navbar">
-  <span className="menu" onClick={() => setOpen(!open)}>☰</span>
+        <span className="menu" onClick={() => setOpen(!open)}>☰</span>
+        <h1 className="title">NOVUS TERMINAL</h1>
+        <span className="live">● LIVE</span>
+      </div>
 
-  <h1 className="title">NOVUS TERMINAL</h1>
-
-  <span className="live">● LIVE</span>
-</div>
-
-{open && (
-  <div className="dropdown">
-    <p onClick={() => document.getElementById("top").scrollIntoView()}>
-      Top Signal
-    </p>
-    <p onClick={() => document.getElementById("graph").scrollIntoView()}>
-      Graph
-    </p>
-    <p onClick={() => document.getElementById("cards").scrollIntoView()}>
-      Stocks
-    </p>
-  </div>
-)}
+      {/* 📂 DROPDOWN */}
+      {open && (
+        <div className="dropdown">
+          <p onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
+            🏠 Home
+          </p>
+          <p onClick={() => document.getElementById("graph").scrollIntoView()}>
+            📊 Graph
+          </p>
+          <p onClick={() => document.getElementById("cards").scrollIntoView()}>
+            📦 Stocks
+          </p>
+        </div>
+      )}
 
       {/* 🔥 TOP SIGNAL */}
       {top && (
-        <div className="hero" id="top">
+        <div className="hero">
           <h2>Top Signal</h2>
           <h1>{top.company}</h1>
           <p>${top.price.toFixed(2)}</p>
@@ -94,27 +116,15 @@ const top = sorted.length > 0 ? sorted[0] : null;
 
       {/* 🧠 AI INSIGHT */}
       <div className="insight">
-        <h3>AI Insight</h3>
+        <h3>Market Insight</h3>
         <p>
           {top
-            ? `${top.company} shows strongest movement (${(
-                top.change * 100
-              ).toFixed(2)}%). Possible momentum forming.`
+            ? `${top.company} is leading the market with strong movement.`
             : "Analyzing..."}
         </p>
       </div>
 
-      {/* ❓ WHY PANEL */}
-      <div className="why">
-        <h3>Why this signal?</h3>
-        <p>
-          {top?.change > 0
-            ? "Price increased → positive sentiment detected."
-            : "Price decreased → negative sentiment detected."}
-        </p>
-      </div>
-
-      {/* 📊 MAIN GRAPH (REAL-TIME) */}
+      {/* 📊 GRAPH */}
       <div className="graph" id="graph">
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={history}>
@@ -131,38 +141,6 @@ const top = sorted.length > 0 ? sorted[0] : null;
         </ResponsiveContainer>
       </div>
 
-      {/* 🔥 HEATMAP */}
-      <div className="heatmap">
-        {sorted.map((item, i) => (
-          <div
-            key={i}
-            className="heatbox"
-            style={{
-              background: item.change > 0 ? "#1f8f5f" : "#8f2f2f",
-            }}
-          >
-            {item.company}
-            <br />
-            {(item.change * 100).toFixed(2)}%
-          </div>
-        ))}
-      </div>
-
-      {/* 🚨 ALERT */}
-      {sorted.some((d) => !d.shift.includes("Stable")) && (
-        <div className="alert">Market Shift Detected</div>
-      )}
-
-      {/* 🧭 TOP MOVERS */}
-      <div className="top-movers">
-        <h3>Top Movers</h3>
-        {sorted.slice(0, 3).map((item, i) => (
-          <p key={i}>
-            {item.company} — {(item.change * 100).toFixed(2)}%
-          </p>
-        ))}
-      </div>
-
       {/* 📦 CARDS */}
       <div className="grid" id="cards">
         {sorted.map((item, index) => (
@@ -171,62 +149,48 @@ const top = sorted.length > 0 ? sorted[0] : null;
             className="card"
             onClick={() => setSelectedStock(item)}
           >
-            <h3>{item.company}</h3>
+            <h3>
+              {item.company}
+              {index === 0 && <span className="badge">🔥</span>}
+            </h3>
             <p>${item.price.toFixed(2)}</p>
             <p>{(item.change * 100).toFixed(2)}%</p>
-
-            <p style={{ color: getColor(item.shift) }}>
-              {item.shift}
-            </p>
-
-            {/* 📊 BULLISH / BEARISH */}
-            <p className="tag">
-              {item.change > 0
-                ? "Bullish 📈"
-                : item.change < 0
-                ? "Bearish 📉"
-                : "Neutral"}
-            </p>
+            <p style={{ color: getColor(item.shift) }}>{item.shift}</p>
           </div>
         ))}
       </div>
 
-      {/* 🔍 INDIVIDUAL STOCK GRAPH */}
+      {/* 🔍 DETAIL VIEW */}
       {selectedStock && (
         <div className="detail">
-          <h2>{selectedStock.company} Analysis</h2>
-
+          <h2>{selectedStock.company}</h2>
           <p>Price: ${selectedStock.price.toFixed(2)}</p>
-          <p>
-            Change: {(selectedStock.change * 100).toFixed(2)}%
-          </p>
+          <p>Change: {(selectedStock.change * 100).toFixed(2)}%</p>
 
-          <ResponsiveContainer width="100%" height={250}>
-            <LineChart data={sorted}>
-              <XAxis dataKey="company" />
-              <YAxis />
-              <Tooltip />
-              <Line
-                type="monotone"
-                dataKey="change"
-                stroke="#00c896"
-              />
-            </LineChart>
-          </ResponsiveContainer>
-
-          <button onClick={() => setSelectedStock(null)}>
-            Close
-          </button>
+          <button onClick={() => setSelectedStock(null)}>Close</button>
         </div>
       )}
 
-      {/* 📘 EXPLANATION */}
-      <div className="explain">
-        <h3>Market Terms</h3>
-        <p><b>Bullish:</b> Expect price increase</p>
-        <p><b>Bearish:</b> Expect price decrease</p>
-        <p><b>Neutral:</b> No strong movement</p>
+      {/* 🤖 CHATBOT */}
+      <div className="chat">
+        <h3>Market Assistant</h3>
+
+        <div className="chat-box">
+          {chat.map((msg, i) => (
+            <p key={i}>
+              <b>{msg.sender === "user" ? "You" : "Bot"}:</b> {msg.text}
+            </p>
+          ))}
+        </div>
+
+        <input
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="Ask about stocks..."
+        />
+        <button onClick={handleSend}>Send</button>
       </div>
+
     </div>
   );
 }

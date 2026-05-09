@@ -128,6 +128,11 @@ body {
 
 .live {
   color: #00c896;
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  50% { opacity: 0.4; }
 }
 
 .dropdown {
@@ -143,4 +148,20 @@ body {
 .dropdown p {
   margin: 10px 0;
   cursor: pointer;
+}
+
+.summary {
+  margin: 15px 0;
+  padding: 12px;
+  background: #111827;
+  border-radius: 10px;
+}
+
+.badge {
+  background: gold;
+  color: black;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  margin-left: 8px;
 }
