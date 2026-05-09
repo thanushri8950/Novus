@@ -1,0 +1,37 @@
+[
+  {
+    "time": "08:04:12",
+    "company": "Tesla",
+    "price": 424.05,
+    "change": -0.00997,
+    "shift": "\ud83d\udd3b Negative Shift"
+  },
+  {
+    "time": "08:04:12",
+    "company": "Apple",
+    "price": 292.53,
+    "change": -0.00257,
+    "shift": "\ud83d\udd3b Negative Shift"
+  },
+  {
+    "time": "08:04:12",
+    "company": "Google",
+    "price": 407.66,
+    "change": 0.01708,
+    "shift": "\ud83d\ude80 Positive Shift"
+  },
+  {
+    "time": "08:04:13",
+    "company": "Amazon",
+    "price": 274.3,
+    "change": 0.00595,
+    "shift": "\ud83d\ude80 Positive Shift"
+  },
+  {
+    "time": "08:04:13",
+    "company": "Microsoft",
+    "price": 410.61,
+    "change": -0.01093,
+    "shift": "\ud83d\udd3b Negative Shift"
+  }
+]

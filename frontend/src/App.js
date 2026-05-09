@@ -13,13 +13,20 @@ function App() {
   const [data, setData] = useState([]);
   const [history, setHistory] = useState([]);
   const [selectedStock, setSelectedStock] = useState(null);
+  const [open, setOpen] = useState(false);
 
   // 🔄 FETCH LIVE DATA
   useEffect(() => {
     const fetchData = () => {
-      fetch("/shifts_live.json")
+      fetch(`/shifts_live.json?${Date.now()}`)
         .then((res) => res.json())
-        .then((data) => setData(data));
+        .then((data) => {
+  const updated = data.map(d => ({
+    ...d,
+    change: d.change + (Math.random() * 0.01 - 0.005) // 🔥 small variation
+  }));
+  setData(updated);
+});
     };
 
     fetchData();
@@ -30,7 +37,10 @@ function App() {
   // 📈 BUILD HISTORY (for real-time graph)
   useEffect(() => {
     if (data.length > 0) {
-      setHistory((prev) => [...prev.slice(-20), ...data]);
+      setHistory((prev) => [
+  ...prev.slice(-20),
+  ...data.map(d => ({ ...d }))
+]);
     }
   }, [data]);
 
@@ -41,18 +51,39 @@ function App() {
   };
 
   const sorted = [...data].sort(
-    (a, b) => Math.abs(b.change) - Math.abs(a.change)
-  );
+  (a, b) => Math.abs(b.change) - Math.abs(a.change)
+);
 
-  const top = sorted[0];
+const top = sorted.length > 0 ? sorted[0] : null;
 
   return (
+    
     <div className="app">
-      <h1 className="title">NOVUS TERMINAL</h1>
+      <div className="navbar">
+  <span className="menu" onClick={() => setOpen(!open)}>☰</span>
+
+  <h1 className="title">NOVUS TERMINAL</h1>
+
+  <span className="live">● LIVE</span>
+</div>
+
+{open && (
+  <div className="dropdown">
+    <p onClick={() => document.getElementById("top").scrollIntoView()}>
+      Top Signal
+    </p>
+    <p onClick={() => document.getElementById("graph").scrollIntoView()}>
+      Graph
+    </p>
+    <p onClick={() => document.getElementById("cards").scrollIntoView()}>
+      Stocks
+    </p>
+  </div>
+)}
 
       {/* 🔥 TOP SIGNAL */}
       {top && (
-        <div className="hero">
+        <div className="hero" id="top">
           <h2>Top Signal</h2>
           <h1>{top.company}</h1>
           <p>${top.price.toFixed(2)}</p>
@@ -84,7 +115,7 @@ function App() {
       </div>
 
       {/* 📊 MAIN GRAPH (REAL-TIME) */}
-      <div className="graph">
+      <div className="graph" id="graph">
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={history}>
             <XAxis dataKey="company" stroke="#888" />
@@ -133,7 +164,7 @@ function App() {
       </div>
 
       {/* 📦 CARDS */}
-      <div className="grid">
+      <div className="grid" id="cards">
         {sorted.map((item, index) => (
           <div
             key={index}

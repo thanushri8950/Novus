@@ -106,3 +106,41 @@ body {
   font-size: 12px;
 }
 
+.navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 15px;
+  position: relative;
+}
+
+.title {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+}
+
+.menu {
+  font-size: 22px;
+  cursor: pointer;
+}
+
+.live {
+  color: #00c896;
+}
+
+.dropdown {
+  position: absolute;
+  top: 60px;
+  left: 15px;
+  background: #111827;
+  padding: 10px;
+  border-radius: 8px;
+  z-index: 1000;
+}
+
+.dropdown p {
+  margin: 10px 0;
+  cursor: pointer;
+}
